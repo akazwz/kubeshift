@@ -91,7 +91,7 @@ kubeshift list
 - `dist/index.js`: Compiled output used by the published binary.
 
 ## License
-ISC
+MIT
 
 ## Author
 [@akazwz](https://github.com/akazwz)
