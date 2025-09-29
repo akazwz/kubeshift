@@ -4,6 +4,10 @@
   "type": "module",
   "private": false,
   "description": "A simple CLI tool for shift kubernetes cluster",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/akazwz/kubeshift.git"
+  },
   "main": "dist/index.js",
   "bin": {
     "kubeshift": "dist/index.js",
@@ -16,7 +20,7 @@
   },
   "keywords": ["kubernetes", "cli", "tool"],
   "author": "akazwz",
-  "license": "ISC",
+  "license": "MIT",
   "packageManager": "pnpm@10.17.1",
   "devDependencies": {
     "@types/node": "^24.5.2",
