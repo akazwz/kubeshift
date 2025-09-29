@@ -1,0 +1,71 @@
+name: Release on version change
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'package.json'
+      - '.github/workflows/release.yml'
+
+jobs:
+  publish:
+    name: Publish to npm if version changed
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+          run_install: true
+
+      - name: Determine if package.json version changed
+        id: determine
+        shell: bash
+        run: |
+          set -euo pipefail
+          NEW_VERSION=$(jq -r .version package.json)
+          if git rev-parse HEAD^ >/dev/null 2>&1; then
+            if git show HEAD^:package.json >/dev/null 2>&1; then
+              OLD_VERSION=$(git show HEAD^:package.json | jq -r .version)
+            else
+              OLD_VERSION=""
+            fi
+          else
+            OLD_VERSION=""
+          fi
+          echo "Old version: ${OLD_VERSION}"
+          echo "New version: ${NEW_VERSION}"
+          if [ -n "${NEW_VERSION}" ] && [ "${NEW_VERSION}" != "${OLD_VERSION}" ]; then
+            echo "publish=true" >> $GITHUB_OUTPUT
+          else
+            echo "publish=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build
+        if: steps.determine.outputs.publish == 'true'
+        run: pnpm build
+
+      - name: Publish to npm
+        if: steps.determine.outputs.publish == 'true'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          # Ensure npm uses auth token; project already has .npmrc using ${NPM_TOKEN}
+          npm whoami || true
+          # Publish with provenance for supply-chain integrity (requires public repo and npm supporting it)
+          npm publish --provenance
